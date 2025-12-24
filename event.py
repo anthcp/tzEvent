@@ -5,24 +5,18 @@ from datetime import datetime as py_datetime
 class Event(pendulum.DateTime):
     _forced_tz = "UTC"
 
-    def __new__(cls, year, month, day,
-            hour=0, minute=0, second=0, microsecond=0,
-            tzinfo=None, **kwargs):
+    def __new__(cls, year, month, day, hour=0, minute=0, second=0, microsecond=0,
+            tzinfo=None, fold=0, **kwargs):
         
         is_internal = kwargs.pop("_internal_call", False)
-        # Allow:
-        # 1) our own factories (_internal_call)
-        # 2) Pendulum internal cloning (tzinfo is already set)
+        # your relaxed guard (allow tzinfo set or internal)
         if not is_internal and tzinfo is None:
             raise TypeError(
-                f"Direct instantiation disabled. "
-                f"Use {cls.__name__}.datetime()/from_datetime()/now()."
+                f"Direct instantiation disabled. Use {cls.__name__}.datetime()/from_datetime()/now()."
             )
         return super().__new__(
-            cls,
-            year, month, day,
-            hour, minute, second, microsecond,
-            tzinfo=tzinfo
+            cls, year, month, day, hour, minute, second, microsecond,
+            tzinfo=tzinfo, fold=fold
         )
 
     @classmethod
@@ -112,7 +106,7 @@ class Event(pendulum.DateTime):
     
     @classmethod
     def from_any_datetime(cls, obj):
-        # stdlib datetime -> pendulum
+    # stdlib datetime -> pendulum
         if isinstance(obj, _dt.datetime) and not isinstance(obj, pendulum.DateTime):
             obj = pendulum.instance(obj)
 
@@ -123,10 +117,20 @@ class Event(pendulum.DateTime):
         # normalize to forced tz
         obj = obj.in_timezone(cls._forced_tz)
 
+        fold = getattr(obj, "fold", 0)
+
         return cls(
             obj.year, obj.month, obj.day,
-            obj.hour, obj.minute, obj.second,
-            obj.microsecond,
+            obj.hour, obj.minute, obj.second, obj.microsecond,
             tzinfo=obj.tzinfo,
+            fold=fold,
             _internal_call=True
         )
+
+        
+    def __eq__(self, other):
+        """Dont compare Event objects by wall-clock fields (year/month/day/hour/minute + tz), use absolute instant."""
+        if isinstance(other, (_dt.datetime, pendulum.DateTime)):
+            # Compare absolute time, not wall time
+            return self.int_timestamp == pendulum.instance(other).int_timestamp
+        return NotImplemented
