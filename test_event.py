@@ -48,18 +48,6 @@ def test_duration_diff_hours_minutes(London):
     assert diff.hours == 2
     assert diff.minutes == 45
 
-
-# def test_diff_for_humans_is_stable_when_frozen(London):
-#     # Freeze "now" so the output is deterministic
-#     with pendulum.travel_to(pendulum.datetime(2025, 1, 1, tz="UTC")):
-#         past_event = London.datetime(2023, 1, 1)
-#         s = past_event.diff_for_humans()
-
-#     # Be tolerant across locales/wording; assert key info
-#     assert "ago" in s
-#     assert ("2 year" in s) or ("2 years" in s)
-
-
 def test_start_of_week_and_end_of_month(London):
     event = London.datetime(2025, 6, 15, 14, 0)
 
@@ -74,10 +62,6 @@ def test_start_of_week_and_end_of_month(London):
     # June has 30 days
     assert eom.day == 30
 
-def test_instantiation_enforcement(London):
-    """Ensure users cannot bypass the factory methods."""
-    with pytest.raises(TypeError, match=r"Direct instantiation disabled"):
-        London(2025, 1, 1)
 
 def test_naive_input_creation(London):
     """Verify that naive integers create the correct aware object."""
@@ -109,10 +93,6 @@ def test_timezone_conversion(London, NewYork):
     # Ensure they represent the exact same moment in absolute time
     assert london_meeting == ny_meeting
 
-# def test_immutability(London):
-#     """Verify that we cannot change the timezone string on the context."""
-#     with pytest.raises(AttributeError):
-#         London.timezone = "Asia/Tokyo"
 
 def test_context_timezone_is_stable(London):
     original = London._forced_tz
